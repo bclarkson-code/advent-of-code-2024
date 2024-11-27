@@ -40,6 +40,9 @@ defmodule Solution do
     end
   end
 
+  defp extract_first([]), do: [nil]
+  defp extract_first([first | _]), do: first
+
   defp parse_words([], total), do: nil
 
   defp parse_words(line, total) do
@@ -68,29 +71,15 @@ defmodule Solution do
 
     allowed_pattern = ~r/\d|zero|one|two|three|four|five|six|seven|eight|nine/
     matches = Regex.scan(allowed_pattern, line)
-    IO.puts("#{matches}")
 
-    case matches do
-      [first | _] -> first
-      nil -> first = nil
-    end
-
-    case Enum.reverse(matches) do
-      [last | _] -> last
-      nil -> last = nil
-    end
-
-    first = Map.get(allowed, first)
-    last = Map.get(allowed, last)
+    [first] = extract_first(matches)
+    [last] = extract_first(Enum.reverse(matches))
 
     with f when not is_nil(f) <- first,
          l when not is_nil(l) <- last do
-      combined = f <> l
-
-      case Integer.parse(combined) do
-        {current, _} -> total + current
-        :error -> total
-      end
+      f = Map.get(allowed, f)
+      l = Map.get(allowed, l)
+      f * 10 + l + total
     else
       _ -> total
     end
