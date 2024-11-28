@@ -10,40 +10,28 @@ defmodule Solution do
     end
   end
 
-  defp first_occurrence([], _values), do: nil
-
-  defp first_occurrence([head | tail], values) do
-    if String.contains?(values, head) do
-      head
-    else
-      first_occurrence(tail, values)
-    end
-  end
+  defp parse_digits([], total), do: total
 
   defp parse_digits(line, total) do
-    digits = "0123456789"
-    line = String.graphemes(line)
+    numbers =
+      Regex.scan(~r/\d/, line)
+      |> Enum.map(fn [val] ->
+        {parsed, _} = Integer.parse(val)
+        parsed
+      end)
 
-    first = first_occurrence(line, digits)
-    last = first_occurrence(Enum.reverse(line), digits)
+    case numbers do
+      [] ->
+        total
 
-    with f when not is_nil(f) <- first,
-         l when not is_nil(l) <- last do
-      combined = f <> l
-
-      case Integer.parse(combined) do
-        {current, _} -> total + current
-        :error -> total
-      end
-    else
-      _ -> total
+      _ ->
+        first = List.first(numbers)
+        last = List.last(numbers)
+        first * 10 + last + total
     end
   end
 
-  defp extract_first([]), do: [nil]
-  defp extract_first([first | _]), do: first
-
-  defp parse_words([], total), do: nil
+  defp parse_words([], total), do: total
 
   defp parse_words(line, total) do
     allowed = %{
@@ -69,35 +57,35 @@ defmodule Solution do
       "nine" => 9
     }
 
-    allowed_pattern = ~r/\d|zero|one|two|three|four|five|six|seven|eight|nine/
-    matches = Regex.scan(allowed_pattern, line)
+    numbers =
+      Enum.flat_map(allowed, fn {word, value} ->
+        Regex.scan(~r/#{word}/, line, return: :index)
+        |> Enum.map(fn [{start, _len}] -> {start, value} end)
+      end)
+      |> Enum.sort()
+      |> Enum.map(fn {_idx, val} -> val end)
 
-    [first] = extract_first(matches)
-    [last] = extract_first(Enum.reverse(matches))
+    case numbers do
+      [] ->
+        total
 
-    with f when not is_nil(f) <- first,
-         l when not is_nil(l) <- last do
-      f = Map.get(allowed, f)
-      l = Map.get(allowed, l)
-      f * 10 + l + total
-    else
-      _ -> total
+      _ ->
+        first = List.first(numbers)
+        last = List.last(numbers)
+        first * 10 + last + total
     end
   end
 
   def part_1() do
-    data = read_file("setup/day_1_input.txt")
-
-    String.split(data, "\n")
+    read_file("setup/day_1_input.txt")
+    |> String.split(data, "\n")
     |> Enum.reduce(0, &parse_digits/2)
   end
 
   def part_2() do
-    data = read_file("setup/day_1_input.txt")
-
-    allowed =
-      String.split(data, "\n")
-      |> Enum.reduce(0, &parse_words/2)
+    read_file("setup/day_1_input.txt")
+    |> String.split("\n")
+    |> Enum.reduce(0, &parse_words/2)
   end
 end
 
