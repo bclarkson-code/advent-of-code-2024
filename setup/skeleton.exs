@@ -1,11 +1,14 @@
 defmodule Solution do
   @day 2
+
+  @suffix "_sample"
+
   def part_1() do
-    read_file("setup/day_#{@day}_input.txt")
+    read_file("setup/day_#{@day}#{@suffix}_input.txt")
   end
 
   def part_2() do
-    read_file("setup/day_#{@day}_input.txt")
+    read_file("setup/day_#{@day}#{@suffix}_input.txt")
   end
 
   defp read_file(file_name) do
