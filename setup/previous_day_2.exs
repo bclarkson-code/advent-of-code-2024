@@ -20,20 +20,15 @@ defmodule Solution do
   def part_2() do
     read_file("setup/day_#{@day}#{@suffix}_input.txt")
     |> Enum.map(&parse_row/1)
-    |> Enum.reduce(fn game, acc ->
-      @total
-      |> Map.keys()
-      |> Enum.reduce(fn key ->
-        current = Map.get(game, key)
+    |> Enum.map(&fewest_cubes/1)
+    |> Enum.reduce(0, fn count, acc ->
+      power =
+        count
+        |> Map.values()
+        |> Enum.product()
 
-        if current > Map.get(acc, key) do
-          Map.put(acc, key, current)
-        else
-          acc
-        end
-      end)
+      acc + power
     end)
-    |> IO.inspect()
   end
 
   defp read_file(file_name) do
@@ -88,27 +83,21 @@ defmodule Solution do
     val > Map.get(@total, key)
   end
 
-  defp smallest_bag(game) do
-    @total
-    |> Map.keys()
-    |> Enum.map(fn colour ->
-      largest =
-        game.games
-        |> Enum.reduce(0, fn game, acc ->
-          current =
-            game
-            |> Map.get(colour, 0)
+  defp fewest_cubes(game) do
+    game.games
+    |> Enum.flat_map(fn row -> Map.to_list(row) end)
+    |> Enum.reduce(
+      %{},
+      fn {key, val}, acc ->
+        current = Map.get(acc, key, 0)
 
-          if current > acc do
-            current
-          else
-            acc
-          end
-        end)
-
-      {colour, largest}
-    end)
-    |> Enum.map()
+        if val > current do
+          Map.put(acc, key, val)
+        else
+          acc
+        end
+      end
+    )
   end
 end
 
