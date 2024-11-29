@@ -8,13 +8,7 @@ defmodule Solution do
     read_file("setup/day_#{@day}#{@suffix}_input.txt")
     |> Enum.map(&parse_row/1)
     |> Enum.map(&too_big/1)
-    |> Enum.reduce(0, fn game, acc ->
-      if game.too_big do
-        acc
-      else
-        acc + game.id
-      end
-    end)
+    |> Enum.reduce(0, &add_valid_games/2)
   end
 
   def part_2() do
@@ -38,14 +32,12 @@ defmodule Solution do
   end
 
   defp parse_row(row) do
-    [id_string | [games_string]] = String.split(row, ":")
-
-    {_, id} = parse_pair(id_string)
-    id = String.to_integer(id)
-
-    games = parse_games_string(games_string)
-
-    %{:id => id, :games => games}
+    with [id_string | [games_string]] <- String.split(row, ":"),
+         {_, id} = parse_pair(id_string),
+         id = String.to_integer(id),
+         games = parse_games_string(games_string) do
+      %{:id => id, :games => games}
+    end
   end
 
   defp parse_pair(string) do
@@ -86,19 +78,12 @@ defmodule Solution do
   defp fewest_cubes(game) do
     game.games
     |> Enum.flat_map(fn row -> Map.to_list(row) end)
-    |> Enum.reduce(
-      %{},
-      fn {key, val}, acc ->
-        current = Map.get(acc, key, 0)
-
-        if val > current do
-          Map.put(acc, key, val)
-        else
-          acc
-        end
-      end
-    )
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {colour, cubes} -> {colour, Enum.max(cubes)} end)
   end
+
+  defp add_valid_games(%{too_big: true}, acc), do: acc
+  defp add_valid_games(%{id: id}, acc), do: acc + id
 end
 
 out = Solution.part_1()
