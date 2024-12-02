@@ -134,10 +134,8 @@ defmodule NearlyValid do
   defp is_valid?([a, b, c], func, used_at, idx) do
     case({func.(a, b), func.(a, c), used_at}) do
       {true, _, nil} -> {true, nil, idx + 1}
-      {false, true, nil} -> {false, idx, idx + 1}
-      {false, false, nil} -> {false, idx, idx + 1}
-      {_, true, used_at} -> {true, used_at, idx + 1}
-      {_, false, used_at} -> {false, used_at, idx + 1}
+      {false, _, nil} -> {false, idx, idx + 1}
+      {_, is_valid, used_at} -> {is_valid, used_at, idx + 1}
     end
   end
 end
