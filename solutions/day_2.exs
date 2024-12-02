@@ -8,13 +8,7 @@ defmodule Solution do
     |> read_file()
     |> Enum.map(&parse/1)
     |> Enum.map(&safe?/1)
-    |> Enum.reduce(0, fn val, acc ->
-      if val do
-        acc + 1
-      else
-        acc
-      end
-    end)
+    |> Enum.count(& &1)
   end
 
   def part_2() do
@@ -22,13 +16,7 @@ defmodule Solution do
     |> read_file()
     |> Enum.map(&parse/1)
     |> Enum.map(&nearly_safe?/1)
-    |> Enum.reduce(0, fn val, acc ->
-      if val do
-        acc + 1
-      else
-        acc
-      end
-    end)
+    |> Enum.count(& &1)
   end
 
   defp read_file(file_name) do
