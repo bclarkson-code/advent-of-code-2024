@@ -21,7 +21,8 @@ defmodule Solution do
 
       Enum.zip(left, right)
     end)
-    |> Enum.reduce(0, fn {l, r}, acc -> abs(l - r) + acc end)
+    |> Enum.map(fn {l, r} -> abs(l - r) end)
+    |> Enum.sum()
   end
 
   def part_2() do
@@ -37,9 +38,10 @@ defmodule Solution do
 
     pairs
     |> Enum.map(&elem(&1, 0))
-    |> Enum.reduce(0, fn val, acc ->
-      acc + val * Map.get(right_count, val, 0)
+    |> Enum.map(fn val ->
+      val * Map.get(right_count, val, 0)
     end)
+    |> Enum.sum()
   end
 
   defp read_file(file_name) do
