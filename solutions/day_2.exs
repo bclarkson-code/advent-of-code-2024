@@ -37,27 +37,28 @@ defmodule Solution do
   end
 
   defp ascending?(row) do
-    [_ | tail] = row
-
-    Enum.zip(row, tail)
-    |> Enum.map(fn {l, r} -> l < r end)
-    |> Enum.all?()
+    row
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.all?(fn [l, r] -> l < r end)
   end
 
   defp descending?(row) do
-    [_ | tail] = row
+    row
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.all?(fn [l, r] -> l > r end)
+  end
 
-    Enum.zip(row, tail)
-    |> Enum.map(fn {l, r} -> l > r end)
-    |> Enum.all?()
+  defp close_to?([left, right]), do: close_to?(left, right)
+
+  defp close_to?(left, right) do
+    diff = abs(left - right)
+    0 < diff and diff < 4
   end
 
   defp small_distance?(row) do
-    [_ | tail] = row
-
-    Enum.zip(row, tail)
-    |> Enum.map(fn {l, r} -> abs(l - r) < 4 and abs(l - r) > 0 end)
-    |> Enum.all?()
+    row
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.all?(&close_to?/1)
   end
 
   defp nearly_safe?(row) do
@@ -65,33 +66,19 @@ defmodule Solution do
     {descending, desc_used_at} = NearlyValid.check(row, &(&1 > &2))
 
     case {ascending, asc_used_at, descending, desc_used_at} do
-      {0, nil, _, _} ->
-        {small_distance, _} =
-          NearlyValid.check(
-            row,
-            &(abs(&1 - &2) < 4 and abs(&1 - &2) > 0)
-          )
-
-        small_distance == 0
-
-      {1, used_at, _, _} ->
-        small_distance?(List.delete_at(row, used_at))
-
-      {_, _, 0, nil} ->
-        {small_distance, _} =
-          NearlyValid.check(
-            row,
-            &(abs(&1 - &2) < 4 and abs(&1 - &2) > 0)
-          )
-
-        small_distance == 0
-
-      {_, _, 1, used_at} ->
-        small_distance?(List.delete_at(row, used_at))
-
-      {_, _, _, _} ->
-        false
+      {0, nil, _, _} -> nearly_close_to(row)
+      {1, idx, _, _} -> row |> List.delete_at(idx) |> small_distance?
+      {_, _, 0, nil} -> nearly_close_to(row)
+      {_, _, 1, idx} -> row |> List.delete_at(idx) |> small_distance?
+      _ -> false
     end
+  end
+
+  defp nearly_close_to(row) do
+    row
+    |> NearlyValid.check(&close_to?/2)
+    |> elem(0)
+    |> Kernel.==(0)
   end
 end
 
@@ -100,33 +87,21 @@ defmodule NearlyValid do
     processed =
       list
       |> Enum.chunk_every(3, 1, :discard)
-      |> Enum.scan({nil, nil, 0}, fn row, {_, used, idx} -> is_valid?(row, func, used, idx) end)
+      |> Enum.scan({nil, nil, 0}, fn row, {_, used, idx} ->
+        is_valid?(row, func, used, idx)
+      end)
 
     n_invalid =
       processed
-      |> Enum.reduce(
-        0,
-        fn {val, _, _}, acc ->
-          if val do
-            acc
-          else
-            acc + 1
-          end
-        end
-      )
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.filter(&(not &1))
+      |> Enum.count()
 
     used_at =
       processed
-      |> Enum.reduce(
-        nil,
-        fn {_, val, _}, acc ->
-          if not is_nil(val) do
-            val
-          else
-            acc
-          end
-        end
-      )
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.filter(&(not is_nil(&1)))
+      |> List.first()
 
     {n_invalid, used_at}
   end
