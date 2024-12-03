@@ -3,34 +3,18 @@ defmodule Solution do
   @suffix ""
   @input_file "inputs/day_#{@day}#{@suffix}.txt"
 
-  def part_1() do
-    data =
-      @input_file
-      |> read_file()
-
-    pattern = ~r/mul\(\d+,\d+\)/
-
-    pattern
-    |> Regex.scan(data)
-    |> Enum.map(fn [val] -> val end)
-    |> Enum.map(&parse_mul/1)
+  def part_1 do
+    @input_file
+    |> read_file
+    |> extract_multiplications
     |> Enum.sum()
   end
 
-  def part_2() do
-    data =
-      @input_file
-      |> read_file()
-
-    pattern = ~r/mul\(\d+,\d+\)|do\(\)|don\'t\(\)/
-
-    {out, _} =
-      pattern
-      |> Regex.scan(data)
-      |> Enum.map(fn [val] -> val end)
-      |> Enum.reduce({0, true}, &parse/2)
-
-    out
+  def part_2 do
+    @input_file
+    |> read_file
+    |> extract_operations
+    |> apply_operations
   end
 
   defp read_file(file_name) do
@@ -38,18 +22,38 @@ defmodule Solution do
     |> File.read!()
   end
 
-  defp parse_mul(mul) do
+  defp extract_multiplications(data) do
+    ~r/mul\(\d+,\d+\)/
+    |> Regex.scan(data)
+    |> Enum.map(&hd/1)
+    |> Enum.map(&apply_multiplication/1)
+  end
+
+  defp apply_multiplication(mul) do
     ~r/\d+/
     |> Regex.scan(mul)
-    |> Enum.map(fn [l] -> String.to_integer(l) end)
+    |> Enum.flat_map(& &1)
+    |> Enum.map(&String.to_integer/1)
     |> Enum.product()
   end
 
-  defp parse(val, {total, active}) do
-    case {val, active} do
+  defp extract_operations(data) do
+    ~r/mul\(\d+,\d+\)|do\(\)|don\'t\(\)/
+    |> Regex.scan(data)
+    |> Enum.map(&hd/1)
+  end
+
+  defp apply_operations(ops) do
+    ops
+    |> Enum.reduce({0, true}, &apply_operation/2)
+    |> elem(0)
+  end
+
+  defp apply_operation(op, {total, active}) do
+    case {op, active} do
       {"do()", _} -> {total, true}
       {"don't()", _} -> {total, false}
-      {mul, true} -> {parse_mul(mul) + total, true}
+      {mul, true} -> {apply_multiplication(mul) + total, true}
       {_, false} -> {total, false}
     end
   end
