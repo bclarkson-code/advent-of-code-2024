@@ -84,26 +84,26 @@ end
 
 defmodule NearlyValid do
   def check(list, func) do
-    processed =
-      list
-      |> Enum.chunk_every(3, 1, :discard)
-      |> Enum.scan({nil, nil, 0}, fn row, {_, used, idx} ->
-        is_valid?(row, func, used, idx)
-      end)
+    list
+    |> Enum.chunk_every(3, 1, :discard)
+    |> Enum.scan({nil, nil, 0}, fn row, {_, used, idx} ->
+      is_valid?(row, func, used, idx)
+    end)
+    |> then(&{count_invalid(&1), get_used_at(&1)})
+  end
 
-    n_invalid =
-      processed
-      |> Enum.map(&elem(&1, 0))
-      |> Enum.filter(&(not &1))
-      |> Enum.count()
+  defp count_invalid(processed) do
+    processed
+    |> Enum.map(&elem(&1, 0))
+    |> Enum.filter(&(not &1))
+    |> Enum.count()
+  end
 
-    used_at =
-      processed
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.filter(&(not is_nil(&1)))
-      |> List.first()
-
-    {n_invalid, used_at}
+  defp get_used_at(processed) do
+    processed
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.filter(&(not is_nil(&1)))
+    |> List.first()
   end
 
   defp is_valid?([a, b, c], func, used_at, idx) do
