@@ -47,7 +47,7 @@ defmodule Solution do
         |> Enum.reduce(
           {starts, completed},
           fn {char, x}, {starts, completed} ->
-            search(char, %Pair{y: y, x: x}, {starts, completed})
+            search_for_x(char, %Pair{y: y, x: x}, {starts, completed})
           end
         )
       end)
@@ -196,26 +196,23 @@ defmodule Solution do
     {starts, completed}
   end
 
+  defp next_x(%{idx: 4}), do: nil
+
   defp next_x(x) do
-    next_locs = %{0 => {0, 2}, 1 => {-1, -1}, 2 => {-1, -1}, 3 => {0, 2}}
+    next_locs = %{0 => {0, 2}, 1 => {1, -1}, 2 => {1, -1}, 3 => {0, 2}}
     {dy, dx} = Map.get(next_locs, x.idx)
-    next_loc = %Pair{y: x.y + dy, x: x.x + dx}
+    next_loc = %Pair{y: x.loc.y + dy, x: x.loc.x + dx}
 
     case {x.idx, x.type} do
-      {0, "MM"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
-      {0, "MS"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
-      {0, "SM"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
-      {0, "SS"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
-      {1, _} -> %XPiece{value: "A", idx: idx + 1, loc: next_loc, type: x.type}
-      {2, "MM"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
-      {2, "MS"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
-      {2, "SM"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
-      {2, "SS"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
-      {3, "MM"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
-      {3, "MS"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
-      {3, "SM"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
-      {3, "SS"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
-      {4, _} -> nil
+      {1, _} -> %XPiece{value: "A", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {2, "MM"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {2, "MS"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {2, "SM"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {2, "SS"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {3, "MM"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {3, "MS"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {3, "SM"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {3, "SS"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
     end
   end
 
@@ -226,17 +223,56 @@ defmodule Solution do
           {starts, completed}
 
         val ->
-          update_matches({starts, completed}, val, char, loc)
+          update_x_matches({starts, completed}, val, char)
       end
 
-    starts
-    |> Map.drop([loc])
+    starts = Map.drop(starts, [loc])
+
+    next_loc = %Pair{y: loc.y, x: loc.x + 2}
 
     starts =
       case char do
-        # "M" -> 
-        #   current = %XPiece}
+        "M" ->
+          starts
+          |> append(next_loc, %XPiece{value: "M", idx: 1, loc: next_loc, type: "MM"})
+          |> append(next_loc, %XPiece{value: "S", idx: 1, loc: next_loc, type: "MS"})
+
+        "S" ->
+          starts
+          |> append(next_loc, %XPiece{value: "M", idx: 1, loc: next_loc, type: "SM"})
+          |> append(next_loc, %XPiece{value: "S", idx: 1, loc: next_loc, type: "SS"})
+
+        _ ->
+          starts
       end
+
+    {starts, completed}
+  end
+
+  defp update_x_match(match, char, {starts, completed}) do
+    next = next_x(match)
+
+    case {char == match.value, next} do
+      {false, _} ->
+        {starts, completed}
+
+      {true, nil} ->
+        {starts, completed + 1}
+
+      {true, _} ->
+        starts =
+          append(starts, next.loc, next)
+
+        {starts, completed}
+    end
+  end
+
+  defp update_x_matches({starts, completed}, matches, char) do
+    {starts, completed} =
+      matches
+      |> Enum.reduce({starts, completed}, fn match, {starts, completed} ->
+        update_x_match(match, char, {starts, completed})
+      end)
 
     {starts, completed}
   end
