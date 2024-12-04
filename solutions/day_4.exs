@@ -6,6 +6,10 @@ defmodule Char do
   defstruct value: nil, dy: nil, dx: nil
 end
 
+defmodule XPiece do
+  defstruct value: nil, type: nil, idx: nil, loc: nil
+end
+
 defmodule Solution do
   @day 4
   @suffix ""
@@ -32,8 +36,23 @@ defmodule Solution do
   end
 
   def part_2() do
-    @input_file
-    |> read_file()
+    {_, completed} =
+      @input_file
+      |> read_file()
+      |> Enum.with_index()
+      |> Enum.reduce({%{}, 0}, fn {row, y}, {starts, completed} ->
+        row
+        |> String.graphemes()
+        |> Enum.with_index()
+        |> Enum.reduce(
+          {starts, completed},
+          fn {char, x}, {starts, completed} ->
+            search(char, %Pair{y: y, x: x}, {starts, completed})
+          end
+        )
+      end)
+
+    completed
   end
 
   defp read_file(file_name) do
@@ -172,6 +191,51 @@ defmodule Solution do
 
         _ ->
           starts
+      end
+
+    {starts, completed}
+  end
+
+  defp next_x(x) do
+    next_locs = %{0 => {0, 2}, 1 => {-1, -1}, 2 => {-1, -1}, 3 => {0, 2}}
+    {dy, dx} = Map.get(next_locs, x.idx)
+    next_loc = %Pair{y: x.y + dy, x: x.x + dx}
+
+    case {x.idx, x.type} do
+      {0, "MM"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
+      {0, "MS"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
+      {0, "SM"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
+      {0, "SS"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
+      {1, _} -> %XPiece{value: "A", idx: idx + 1, loc: next_loc, type: x.type}
+      {2, "MM"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
+      {2, "MS"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
+      {2, "SM"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
+      {2, "SS"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
+      {3, "MM"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
+      {3, "MS"} -> %XPiece{value: "S", idx: idx + 1, loc: next_loc, type: x.type}
+      {3, "SM"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
+      {3, "SS"} -> %XPiece{value: "M", idx: idx + 1, loc: next_loc, type: x.type}
+      {4, _} -> nil
+    end
+  end
+
+  defp search_for_x(char, loc, {starts, completed}) do
+    {starts, completed} =
+      case Map.get(starts, loc) do
+        nil ->
+          {starts, completed}
+
+        val ->
+          update_matches({starts, completed}, val, char, loc)
+      end
+
+    starts
+    |> Map.drop([loc])
+
+    starts =
+      case char do
+        # "M" -> 
+        #   current = %XPiece}
       end
 
     {starts, completed}
