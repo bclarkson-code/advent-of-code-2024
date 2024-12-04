@@ -199,20 +199,27 @@ defmodule Solution do
   defp next_x(%{idx: 4}), do: nil
 
   defp next_x(x) do
-    next_locs = %{0 => {0, 2}, 1 => {1, -1}, 2 => {1, -1}, 3 => {0, 2}}
-    {dy, dx} = Map.get(next_locs, x.idx)
+    {dy, dx} =
+      case x.idx do
+        0 -> {0, 2}
+        1 -> {1, -1}
+        2 -> {1, -1}
+        3 -> {0, 2}
+      end
+
     next_loc = %Pair{y: x.loc.y + dy, x: x.loc.x + dx}
+    next_piece = %XPiece{value: nil, idx: x.idx + 1, loc: next_loc, type: x.type}
 
     case {x.idx, x.type} do
-      {1, _} -> %XPiece{value: "A", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {2, "MM"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {2, "MS"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {2, "SM"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {2, "SS"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {3, "MM"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {3, "MS"} -> %XPiece{value: "S", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {3, "SM"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
-      {3, "SS"} -> %XPiece{value: "M", idx: x.idx + 1, loc: next_loc, type: x.type}
+      {1, _} -> %{next_piece | value: "A"}
+      {2, "MM"} -> %{next_piece | value: "S"}
+      {2, "MS"} -> %{next_piece | value: "M"}
+      {2, "SM"} -> %{next_piece | value: "S"}
+      {2, "SS"} -> %{next_piece | value: "M"}
+      {3, "MM"} -> %{next_piece | value: "S"}
+      {3, "MS"} -> %{next_piece | value: "S"}
+      {3, "SM"} -> %{next_piece | value: "M"}
+      {3, "SS"} -> %{next_piece | value: "M"}
     end
   end
 
