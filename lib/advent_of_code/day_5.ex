@@ -77,13 +77,14 @@ defmodule AdventOfCode.Day5 do
     end)
   end
 
-  defp middle_number(row) do
-    middle_number(row, row)
+  defp middle_number(list) do
+    middle_number(list, list)
   end
 
-  defp middle_number([_ | fast], [slow_val | slow]) do
+  # Use a slow and fast pointer to find the middle of the list
+  defp middle_number([_ | fast], [val | slow]) do
     case fast do
-      [] -> slow_val
+      [] -> val
       [_ | fast] -> middle_number(fast, slow)
     end
   end
