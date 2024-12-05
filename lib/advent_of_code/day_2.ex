@@ -1,4 +1,4 @@
-defmodule Solution do
+defmodule AdventOfCode.Day2 do
   @day 2
   @suffix ""
   @input_file "inputs/day_#{@day}#{@suffix}.txt"
@@ -114,9 +114,3 @@ defmodule NearlyValid do
     end
   end
 end
-
-out = Solution.part_1()
-IO.puts(out)
-
-out = Solution.part_2()
-IO.puts(out)

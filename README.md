@@ -2,23 +2,20 @@
 
 This repository contains my solutions to [Advent of Code](https://adventofcode.com/) implemented in Elixir. I'm using this as an opportunity to learn functional programming with Elixir.
 
-## Project Structure
+## Installation
 
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+by adding `advent_of_code_2024` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:advent_of_code_2024, "~> 0.1.0"}
+  ]
+end
 ```
-├── solutions/
-│   ├── day_1.exs
-│   ├── day_2.exs
-│   └── ...
-└── inputs/
-    ├── day_1.txt
-    ├── day_2.txt
-    └── ...
-```
 
-## Running Solutions
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
+and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
+be found at <https://hexdocs.pm/advent_of_code_2024>.
 
-To run a specific day's solution:
-
-```bash
-elixir lib/solutions/day01.ex
-```

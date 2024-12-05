@@ -1,4 +1,4 @@
-defmodule Solution do
+defmodule AdventOfCode.Day1 do
   @day 1
 
   @suffix ""
@@ -58,9 +58,3 @@ defmodule Solution do
     end)
   end
 end
-
-out = Solution.part_1()
-IO.puts(out)
-
-out = Solution.part_2()
-IO.puts(out)

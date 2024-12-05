@@ -1,56 +1,41 @@
-defmodule Solution do
+defmodule AdventOfCode.Day5 do
   @day 5
   @suffix "_sample"
   @input_file "inputs/day_#{@day}#{@suffix}.txt"
 
   def part_1() do
-    {first, second} =
-      @input_file
-      |> read_file()
-
-    order = first |> build_order
-    lists = second |> build_lists
-    in_order = second |> Enum.map(&in_order?(order, &1))
+    {order, lists} = @input_file |> read_file()
 
     lists
-    |> Enum.zip(in_order)
-    |> Enum.filter(&elem(&1, 1))
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.map(&middle_number/1)
+    |> Stream.map(&{&1, in_order?(order, &1)})
+    |> Stream.filter(&elem(&1, 1))
+    |> Stream.map(&elem(&1, 0))
+    |> Stream.map(&middle_number/1)
     |> Enum.sum()
   end
 
   def part_2() do
-    {first, second} =
-      @input_file
-      |> read_file()
-
-    order = first |> build_order
-    lists = second |> build_lists
-    in_order = second |> Enum.map(&in_order?(order, &1))
+    {order, lists} = @input_file |> read_file()
 
     lists
-    |> Enum.zip(in_order)
-    |> Enum.filter(&(not elem(&1, 1)))
-    |> Enum.map(&elem(&1, 0))
-    |> Enum.map(&reorder(order, &1))
-    |> Enum.map(&middle_number/1)
+    |> Stream.map(&{&1, in_order?(order, &1)})
+    |> Stream.reject(&elem(&1, 1))
+    |> Stream.map(&elem(&1, 0))
+    |> Stream.map(&reorder(order, &1))
+    |> Stream.map(&middle_number/1)
     |> Enum.sum()
   end
 
   defp read_file(file_name) do
-    file_name
-    |> File.read!()
-    |> String.split("\n\n")
-    |> then(fn [first, second] ->
-      first = first |> String.split("\n", trim: true)
-      second = second |> String.split("\n", trim: true)
-      {first, second}
-    end)
+    with {:ok, content} <- File.read(file_name),
+         [first, second] <- String.split(content, "\n\n") do
+      {build_order(first), build_lists(second)}
+    end
   end
 
   defp build_order(rows) do
     rows
+    |> String.split("\n", trim: true)
     |> Enum.map(&String.split(&1, "|"))
     |> Enum.map(fn [l, r] -> {String.to_integer(l), String.to_integer(r)} end)
     |> MapSet.new()
@@ -58,6 +43,7 @@ defmodule Solution do
 
   defp build_lists(rows) do
     rows
+    |> String.split("\n", trim: true)
     |> Enum.map(&String.split(&1, ","))
     |> Enum.map(fn row ->
       Enum.map(row, &String.to_integer/1)
@@ -81,8 +67,14 @@ defmodule Solution do
   defp in_order?(order, row) do
     row
     |> pairs
-    |> Enum.map(&in_order?(order, &1))
-    |> Enum.all?()
+    |> Enum.all?(&in_order?(order, &1))
+  end
+
+  defp reorder(order, row) do
+    row
+    |> Enum.sort(fn l, r ->
+      in_order?(order, {l, r})
+    end)
   end
 
   defp middle_number(row) do
@@ -99,17 +91,4 @@ defmodule Solution do
   defp middle_number([], [val | _]) do
     val
   end
-
-  defp reorder(order, row) do
-    row
-    |> Enum.sort(fn l, r ->
-      in_order?(order, {l, r})
-    end)
-  end
 end
-
-out = Solution.part_1()
-IO.puts(out)
-
-out = Solution.part_2()
-IO.puts(out)
