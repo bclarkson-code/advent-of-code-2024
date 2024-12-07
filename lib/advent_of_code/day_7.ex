@@ -8,7 +8,9 @@ defmodule AdventOfCode.Day7 do
     @input_file
     |> read_file()
     |> Enum.map(&parse_row/1)
-    |> Enum.filter(fn {target, [head | tail]} -> can_make_total?(tail, target, head) end)
+    |> Enum.filter(fn {target, [head | tail]} ->
+      can_make_total?(tail, target, head)
+    end)
     |> Enum.map(&elem(&1, 0))
     |> Enum.sum()
   end
@@ -17,7 +19,9 @@ defmodule AdventOfCode.Day7 do
     @input_file
     |> read_file()
     |> Enum.map(&parse_row/1)
-    |> Enum.filter(fn {target, [head | tail]} -> can_make_total?(tail, target, head, :concat) end)
+    |> Enum.filter(fn {target, [head | tail]} ->
+      can_make_total?(tail, target, head, :concat)
+    end)
     |> Enum.map(&elem(&1, 0))
     |> Enum.sum()
   end
