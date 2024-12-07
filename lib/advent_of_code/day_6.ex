@@ -6,25 +6,26 @@ defmodule ObstacleGroup do
   end
 
   def put(%__MODULE__{} = group, {y, x}) do
+    # Add x coordinate to the row lists (both forward and reversed)
+    new_rows = append(group.rows, y, x)
+    new_rows_sorted = Map.update(new_rows, y, [x], &Enum.sort/1)
+    new_rows_reversed = Map.update(new_rows_sorted, y, [x], &Enum.reverse/1)
+
+    # Add y coordinate to the column lists (both forward and reversed)
+    new_cols = append(group.cols, x, y)
+    new_cols_sorted = Map.update(new_cols, x, [y], &Enum.sort/1)
+    new_cols_reversed = Map.update(new_cols_sorted, x, [y], &Enum.reverse/1)
+
+    # Return updated struct with all new maps
     %__MODULE__{
       group
-      | rows: Map.update(group.rows, y, [x], &ordered_insert(&1, x, :descending)),
-        rows_reversed: Map.update(group.rows_reversed, y, [x], &ordered_insert(&1, x)),
-        cols: Map.update(group.cols, x, [y], &ordered_insert(&1, y, :descending)),
-        cols_reversed: Map.update(group.cols_reversed, x, [y], &ordered_insert(&1, y))
+      | rows: new_rows_sorted,
+        rows_reversed: new_rows_reversed,
+        cols: new_cols_sorted,
+        cols_reversed: new_cols_reversed,
+        height: group.height,
+        width: group.width
     }
-  end
-
-  defp ordered_insert(list, val, order \\ :ascending)
-  defp ordered_insert(nil, val, _), do: [val]
-  defp ordered_insert([], val, _), do: [val]
-
-  defp ordered_insert([head | tail], val, order) do
-    case {head <= val, head >= val, order} do
-      {true, _, :ascending} -> [val, head | tail]
-      {_, true, :descending} -> [val, head | tail]
-      _ -> [head | ordered_insert(tail, val, order)]
-    end
   end
 
   def new(obstacles, height, width) do
@@ -137,7 +138,7 @@ end
 
 defmodule AdventOfCode.Day6 do
   @day 6
-  @suffix ""
+  @suffix "_sample"
   @input_file "inputs/day_#{@day}#{@suffix}.txt"
 
   def part_1() do
