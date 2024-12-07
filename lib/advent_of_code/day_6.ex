@@ -5,6 +5,28 @@ defmodule ObstacleGroup do
     Map.update(map, key, [val], fn existing -> [val | existing] end)
   end
 
+  def put(%__MODULE__{} = group, {y, x}) do
+    %__MODULE__{
+      group
+      | rows: Map.update(group.rows, y, [x], &ordered_insert(&1, x, :descending)),
+        rows_reversed: Map.update(group.rows_reversed, y, [x], &ordered_insert(&1, x)),
+        cols: Map.update(group.cols, x, [y], &ordered_insert(&1, y, :descending)),
+        cols_reversed: Map.update(group.cols_reversed, x, [y], &ordered_insert(&1, y))
+    }
+  end
+
+  defp ordered_insert(list, val, order \\ :ascending)
+  defp ordered_insert(nil, val, _), do: [val]
+  defp ordered_insert([], val, _), do: [val]
+
+  defp ordered_insert([head | tail], val, order) do
+    case {head <= val, head >= val, order} do
+      {true, _, :ascending} -> [val, head | tail]
+      {_, true, :descending} -> [val, head | tail]
+      _ -> [head | ordered_insert(tail, val, order)]
+    end
+  end
+
   def new(obstacles, height, width) do
     rows =
       obstacles
@@ -42,9 +64,6 @@ defmodule ObstacleGroup do
         Map.put(acc, k, Enum.reverse(v))
       end)
 
-    IO.inspect(cols)
-    IO.inspect(cols_reversed)
-
     %__MODULE__{
       rows: rows,
       cols: cols,
@@ -55,25 +74,15 @@ defmodule ObstacleGroup do
     }
   end
 
-  defp next([], _), do: nil
-  defp next(nil, _), do: nil
+  defp next(list, val, order \\ :ascending)
+  defp next([], _, _), do: nil
+  defp next(nil, _, _), do: nil
 
-  defp next([head | tail], val) do
-    if head > val do
-      head
-    else
-      next(tail, val)
-    end
-  end
-
-  defp prev([], _), do: nil
-  defp prev(nil, _), do: nil
-
-  defp prev([head | tail], val) do
-    if head < val do
-      head
-    else
-      prev(tail, val)
+  defp next([head | tail], val, order) do
+    case order do
+      :ascending when head > val -> head
+      :descending when head < val -> head
+      _ -> next(tail, val, order)
     end
   end
 
@@ -81,45 +90,45 @@ defmodule ObstacleGroup do
     case direction do
       "left" ->
         group.rows_reversed
-        |> Map.get(y - 1)
-        |> prev(x)
+        |> Map.get(y)
+        |> next(x, :descending)
         |> then(fn loc ->
           case loc do
-            nil -> {:out_of_bounds, {y - 1, 0}}
-            loc -> {:in_bounds, {y - 1, loc}}
+            nil -> {:out_of_bounds, {y, -100_000}}
+            loc -> {:in_bounds, {y, loc + 1}}
           end
         end)
 
       "right" ->
         group.rows
-        |> Map.get(y + 1)
+        |> Map.get(y)
         |> next(x)
         |> then(fn loc ->
           case loc do
-            nil -> {:out_of_bounds, {y + 1, group.width}}
-            loc -> {:in_bounds, {y + 1, loc}}
+            nil -> {:out_of_bounds, {y, 100_000}}
+            loc -> {:in_bounds, {y, loc - 1}}
           end
         end)
 
       "up" ->
         group.cols_reversed
-        |> Map.get(x + 1)
-        |> prev(y)
+        |> Map.get(x)
+        |> next(y, :descending)
         |> then(fn loc ->
           case loc do
-            nil -> {:out_of_bounds, {0, x + 1}}
-            loc -> {:in_bounds, {loc, x + 1}}
+            nil -> {:out_of_bounds, {x, -100_000}}
+            loc -> {:in_bounds, {loc + 1, x}}
           end
         end)
 
       "down" ->
         group.cols
-        |> Map.get(x - 1)
+        |> Map.get(x)
         |> next(y)
         |> then(fn loc ->
           case loc do
-            nil -> {:out_of_bounds, {group.height, x - 1}}
-            loc -> {:in_bounds, {loc, x - 1}}
+            nil -> {:out_of_bounds, {x, 100_000}}
+            loc -> {:in_bounds, {loc - 1, x}}
           end
         end)
     end
@@ -128,7 +137,7 @@ end
 
 defmodule AdventOfCode.Day6 do
   @day 6
-  @suffix "_sample"
+  @suffix ""
   @input_file "inputs/day_#{@day}#{@suffix}.txt"
 
   def part_1() do
@@ -260,41 +269,32 @@ defmodule AdventOfCode.Day6 do
     end
   end
 
-  defp makes_loop({y, x}, direction, obstacles, groups, height, width) do
+  defp makes_loop?({y, x}, direction, obstacles, groups, height, width) do
     obstacle = next_loc({y, x}, direction)
-    {obs_y, obs_x} = obstacle
-    IO.puts("Currently at #{y}, #{x}")
-    IO.puts("Placing at #{obs_y}, #{obs_x}")
-    IO.puts("Direction #{direction}")
     next_dir = next_direction(direction)
 
     if can_place(obstacle, height, width, obstacles) do
-      obstacles = MapSet.put(obstacles, obstacle)
-      follow(obstacle, next_dir, groups, obstacle)
-    end
+      modified_group = ObstacleGroup.put(groups, obstacle)
 
-    # {:valid, {final_y, final_x}} <- follow({obs_y, obs_x}, next_dir, groups)
-    # IO.puts("-> #{final_y}, #{final_x}")
-    #
-    # cond do
-    #   direction == "up" && final_y < obs_y && final_x == obs_x -> true
-    #   direction == "right" && final_x > obs_x && final_y == obs_y -> true
-    #   direction == "down" && final_y > obs_y && final_x == obs_x -> true
-    #   direction == "left" && final_x < obs_x && final_y == obs_y -> true
-    #   true -> false
-    # end
+      case follow({y, x}, next_dir, modified_group, MapSet.new([{y, x}])) do
+        :loop ->
+          true
+
+        :no_loop ->
+          false
+      end
+    else
+      false
+    end
   end
 
   defp n_squares(loc, direction, obstacles, height, width, groups, count) do
     count =
-      if makes_loop(loc, direction, obstacles, groups, height, width) do
-        IO.inspect(loc)
+      if makes_loop?(loc, direction, obstacles, groups, height, width) do
         count + 1
       else
         count
       end
-
-    IO.puts("\n")
 
     {state, next_loc, next_direction} = step(loc, direction, obstacles, height, width)
 
@@ -304,19 +304,20 @@ defmodule AdventOfCode.Day6 do
     end
   end
 
-  defp follow({y, x}, direction, groups, until) do
+  defp follow({y, x}, direction, groups, visited) do
     case ObstacleGroup.next(groups, y, x, direction) do
       {:in_bounds, next_loc} ->
-        if next_loc == until do
-          {:valid, nil}
+        next_dir = next_direction(direction)
+
+        if MapSet.member?(visited, {next_loc, next_dir}) do
+          :loop
         else
-          IO.puts("#{y}, #{x} -#{direction}-> #{elem(next_loc, 0)}, #{elem(next_loc, 1)}")
-          next_dir = next_direction(direction)
-          follow(next_loc, next_dir, groups, until)
+          visited = MapSet.put(visited, {next_loc, next_dir})
+          follow(next_loc, next_dir, groups, visited)
         end
 
       {:out_of_bounds, _} ->
-        {:invalid, nil}
+        :no_loop
     end
   end
 end
