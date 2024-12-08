@@ -11,19 +11,11 @@ defmodule AdventOfCode.Day8 do
       |> parse
 
     values
-    |> Enum.map(fn {_, val} ->
-      val
-      |> MapSet.to_list()
-      |> pairs([])
-    end)
-    |> Enum.concat()
+    |> generate_pairs()
     |> Enum.map(fn {left, right} ->
       antinodes(left, right)
     end)
-    |> Enum.concat()
-    |> Enum.filter(&in_bounds?(&1, shape))
-    |> Enum.uniq()
-    |> Enum.count()
+    |> filter_pairs(shape)
   end
 
   def part_2() do
@@ -33,19 +25,11 @@ defmodule AdventOfCode.Day8 do
       |> parse
 
     values
-    |> Enum.map(fn {_, val} ->
-      val
-      |> MapSet.to_list()
-      |> pairs([])
-    end)
-    |> Enum.concat()
+    |> generate_pairs()
     |> Enum.map(fn {left, right} ->
       extended_antinodes(left, right, shape)
     end)
-    |> Enum.concat()
-    |> Enum.filter(&in_bounds?(&1, shape))
-    |> Enum.uniq()
-    |> Enum.count()
+    |> filter_pairs(shape)
   end
 
   defp read_file(file_name) do
@@ -83,6 +67,15 @@ defmodule AdventOfCode.Day8 do
     {length(grid), String.length(head)}
   end
 
+  def filter_pairs(pairs, shape) do
+    pairs
+    |> Enum.concat()
+    |> Enum.filter(&in_bounds?(&1, shape))
+    |> Enum.uniq()
+    |> Enum.count()
+  end
+
+  def pairs(values, prev \\ [])
   def pairs([], prev), do: List.flatten(prev)
   def pairs([_], prev), do: List.flatten(prev)
 
@@ -92,6 +85,16 @@ defmodule AdventOfCode.Day8 do
       |> Enum.map(&{head, &1})
 
     pairs(tail, [current | prev])
+  end
+
+  def generate_pairs(inputs) do
+    inputs
+    |> Enum.map(fn {_, val} ->
+      val
+      |> MapSet.to_list()
+      |> pairs()
+    end)
+    |> Enum.concat()
   end
 
   def antinodes({y_left, x_left}, {y_right, x_right}) do
